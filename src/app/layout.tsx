@@ -9,6 +9,9 @@ import {
 } from "@clerk/nextjs";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { ConvexClientProvider } from "@/components/ConvexClientProvider";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,21 +39,32 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
-          <header className="flex justify-end items-center p-4 gap-4 h-16">
-            <SignedOut>
-              <SignInButton />
-              <SignUpButton>
-                <button className="bg-[#6c47ff] text-white rounded-full font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 cursor-pointer">
-                  Sign Up
-                </button>
-              </SignUpButton>
-            </SignedOut>
-            <SignedIn>
-              <UserButton />
-            </SignedIn>
-          </header>
+          <ConvexClientProvider>
+            <header className="flex justify-between items-center p-4 gap-4 h-16 border-b">
+              <Link href="/" className="text-xl font-bold">
+                RateSheet
+              </Link>
+              <div className="flex items-center gap-4">
+                <SignedOut>
+                  <SignInButton mode="modal">
+                    <Button className="text-sm font-medium hover:text-gray-600">
+                      Sign In
+                    </Button>
+                  </SignInButton>
+                  <SignUpButton mode="modal">
+                    <Button className="" variant="outline">
+                      Get Started
+                    </Button>
+                  </SignUpButton>
+                </SignedOut>
+                <SignedIn>
+                  <UserButton afterSignOutUrl="/" />
+                </SignedIn>
+              </div>
+            </header>
 
-          {children}
+            {children}
+          </ConvexClientProvider>
         </body>
       </html>
     </ClerkProvider>
