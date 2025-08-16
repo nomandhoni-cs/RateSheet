@@ -53,10 +53,10 @@ export default function PayrollPage() {
     api.productionLogs.calculateWorkerPayroll,
     selectedWorkerId && startDate && endDate && showPayroll
       ? {
-          workerId: selectedWorkerId as any,
-          startDate,
-          endDate,
-        }
+        workerId: selectedWorkerId as any,
+        startDate,
+        endDate,
+      }
       : "skip"
   );
 
@@ -172,7 +172,7 @@ export default function PayrollPage() {
           <CardContent>
             <div className="mb-6">
               <div className="text-3xl font-bold text-green-600">
-                Total Pay: ${payrollData.totalPay.toFixed(2)}
+                Total Pay: ৳{payrollData.totalPay.toFixed(2)}
               </div>
             </div>
 
@@ -198,7 +198,7 @@ export default function PayrollPage() {
                         <TableCell>{detail.productionDate}</TableCell>
                         <TableCell>{detail.style?.name}</TableCell>
                         <TableCell>{detail.quantity}</TableCell>
-                        <TableCell>${detail.rate.toFixed(2)}</TableCell>
+                        <TableCell>৳{detail.rate.toFixed(2)}</TableCell>
                         <TableCell className="text-right font-medium">
                           ${detail.pay.toFixed(2)}
                         </TableCell>

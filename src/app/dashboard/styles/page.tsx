@@ -32,6 +32,7 @@ export default function StylesPage() {
   const [isAddingRate, setIsAddingRate] = useState<string | null>(null);
   const [newRate, setNewRate] = useState("");
   const [newEffectiveDate, setNewEffectiveDate] = useState("");
+  const [newEndDate, setNewEndDate] = useState("");
 
   const userData = useQuery(
     api.users.getUserByClerkId,
@@ -86,9 +87,11 @@ export default function StylesPage() {
         organizationId: userData.organizationId,
         rate: parseFloat(newRate),
         effectiveDate: newEffectiveDate,
+        endDate: newEndDate || undefined,
       });
       setNewRate("");
       setNewEffectiveDate("");
+      setNewEndDate("");
       setIsAddingRate(null);
     } catch (error) {
       console.error("Failed to create style rate:", error);
@@ -221,6 +224,16 @@ export default function StylesPage() {
                   required
                 />
               </div>
+              <div>
+                <Label htmlFor="endDate">End Date (Optional)</Label>
+                <Input
+                  id="endDate"
+                  type="date"
+                  value={newEndDate}
+                  onChange={(e) => setNewEndDate(e.target.value)}
+                  min={newEffectiveDate || undefined}
+                />
+              </div>
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button type="submit" className="w-full sm:w-auto">
                   Add Rate
@@ -233,6 +246,7 @@ export default function StylesPage() {
                     setIsAddingRate(null);
                     setNewRate("");
                     setNewEffectiveDate("");
+                    setNewEndDate("");
                   }}
                 >
                   Cancel

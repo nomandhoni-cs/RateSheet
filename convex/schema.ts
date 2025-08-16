@@ -59,9 +59,11 @@ export default defineSchema({
     name: v.string(),
     organizationId: v.id("organizations"),
     sectionId: v.id("sections"),
+    manualId: v.optional(v.string()),
   })
     .index("by_organization", ["organizationId"])
-    .index("by_section", ["sectionId"]),
+    .index("by_section", ["sectionId"])
+    .index("by_org_manualId", ["organizationId", "manualId"]),
 
   styles: defineTable({
     name: v.string(),
@@ -74,6 +76,7 @@ export default defineSchema({
     organizationId: v.id("organizations"),
     rate: v.number(),
     effectiveDate: v.string(), // Format: "YYYY-MM-DD"
+    endDate: v.optional(v.string()), // Optional end date for custom period
   })
     .index("by_organization", ["organizationId"])
     .index("by_style", ["styleId"])

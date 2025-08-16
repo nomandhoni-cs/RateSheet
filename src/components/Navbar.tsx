@@ -15,7 +15,7 @@ import {
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useState } from "react";
-import { Menu, X, BarChart3, Users, Building2, Palette, ClipboardList, DollarSign } from "lucide-react";
+import { Menu, X, BarChart3, Users, Building2, Palette, ClipboardList, DollarSign, FileText } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 export function Navbar() {
@@ -38,6 +38,7 @@ export function Navbar() {
     { name: "Styles", href: "/dashboard/styles", icon: Palette },
     { name: "Production", href: "/dashboard/production", icon: ClipboardList },
     { name: "Payroll", href: "/dashboard/payroll", icon: DollarSign },
+    { name: "Reports", href: "/dashboard/reports", icon: FileText },
   ];
 
   return (

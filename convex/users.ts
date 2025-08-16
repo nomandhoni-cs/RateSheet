@@ -174,6 +174,58 @@ export const updateUserRole = mutation({
   },
 });
 
+// Remove user from organization (admin only)
+export const removeUserFromOrganization = mutation({
+  args: {
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      throw new Error("You must be logged in to remove a user.");
+    }
+
+    const callingUser = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!callingUser || callingUser.role !== "admin") {
+      throw new Error("You must be an admin to remove a user.");
+    }
+
+    const userToRemove = await ctx.db.get(args.userId);
+
+    if (!userToRemove) {
+      throw new Error("User to remove not found.");
+    }
+
+    // Check if the user to remove is in the same organization
+    if (userToRemove.organizationId !== callingUser.organizationId) {
+      throw new Error("User is not in your organization.");
+    }
+
+    // Check if the manager is assigned to any sections
+    const assignedSections = await ctx.db
+      .query("sections")
+      .withIndex("by_manager", (q) => q.eq("managerId", args.userId))
+      .collect();
+
+    if (assignedSections.length > 0) {
+      throw new Error(
+        "This manager is still assigned to one or more sections. Please re-assign them before removing the manager."
+      );
+    }
+
+    // Remove user from organization
+    await ctx.db.patch(args.userId, {
+      organizationId: undefined,
+      role: "pending",
+    });
+  },
+});
+
 // Complete onboarding
 export const completeOnboarding = mutation({
   args: { clerkId: v.string() },

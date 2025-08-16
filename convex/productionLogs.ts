@@ -118,11 +118,19 @@ export const calculateWorkerPayroll = query({
     const payrollDetails = [];
 
     for (const log of logs) {
-      // Get the rate for this style on the production date
+      // Get the rate for this style on the production date (within active period)
       const rates = await ctx.db
         .query("styleRates")
         .withIndex("by_style", (q) => q.eq("styleId", log.styleId))
-        .filter((q) => q.lte(q.field("effectiveDate"), log.productionDate))
+        .filter((q) =>
+          q.and(
+            q.lte(q.field("effectiveDate"), log.productionDate),
+            q.or(
+              q.eq(q.field("endDate"), undefined as any),
+              q.gte(q.field("endDate"), log.productionDate)
+            )
+          )
+        )
         .collect();
 
       const currentRate = rates.sort((a, b) =>

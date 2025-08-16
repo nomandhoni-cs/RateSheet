@@ -70,3 +70,85 @@ export const deleteSection = mutation({
     await ctx.db.delete(args.sectionId);
   },
 });
+
+// Get section summary for a date range
+export const getSectionSummary = query({
+  args: {
+    sectionId: v.id("sections"),
+    startDate: v.string(),
+    endDate: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Get all workers in the section
+    const workers = await ctx.db
+      .query("workers")
+      .withIndex("by_section", (q) => q.eq("sectionId", args.sectionId))
+      .collect();
+
+    let totalQuantity = 0;
+    let totalPay = 0;
+    const styleSummaries: Record<
+      string,
+      { name: string; quantity: number; pay: number }
+    > = {};
+
+    for (const worker of workers) {
+      const logs = await ctx.db
+        .query("productionLogs")
+        .withIndex("by_worker", (q) => q.eq("workerId", worker._id))
+        .filter((q) =>
+          q.and(
+            q.gte(q.field("productionDate"), args.startDate),
+            q.lte(q.field("productionDate"), args.endDate)
+          )
+        )
+        .collect();
+
+      for (const log of logs) {
+        let logPay = 0;
+
+        const rates = await ctx.db
+          .query("styleRates")
+          .withIndex("by_style", (q) => q.eq("styleId", log.styleId))
+          .filter((q) =>
+            q.and(
+              q.lte(q.field("effectiveDate"), log.productionDate),
+              q.or(
+                q.eq(q.field("endDate"), undefined as any),
+                q.gte(q.field("endDate"), log.productionDate)
+              )
+            )
+          )
+          .collect();
+        const currentRate = rates.sort((a, b) =>
+          b.effectiveDate.localeCompare(a.effectiveDate)
+        )[0];
+        if (currentRate) {
+          logPay = log.quantity * currentRate.rate;
+        }
+
+        totalQuantity += log.quantity;
+        totalPay += logPay;
+
+        const style = await ctx.db.get(log.styleId);
+        if (style) {
+          if (!styleSummaries[style._id]) {
+            styleSummaries[style._id] = {
+              name: style.name,
+              quantity: 0,
+              pay: 0,
+            };
+          }
+          styleSummaries[style._id].quantity += log.quantity;
+          styleSummaries[style._id].pay += logPay;
+        }
+      }
+    }
+
+    return {
+      totalQuantity,
+      totalPay,
+      styleSummaries: Object.values(styleSummaries),
+    };
+  },
+});

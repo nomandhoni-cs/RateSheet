@@ -35,8 +35,7 @@ export default function ProductionPage() {
   const { user } = useUser();
   const [isAddingLog, setIsAddingLog] = useState(false);
   const [selectedWorkerId, setSelectedWorkerId] = useState<string>("");
-  const [selectedStyleId, setSelectedStyleId] = useState<string>("");
-  const [quantity, setQuantity] = useState("");
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [productionDate, setProductionDate] = useState("");
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0]
@@ -81,32 +80,41 @@ export default function ProductionPage() {
   // Get today's date in YYYY-MM-DD format
   const today = new Date().toISOString().split("T")[0];
 
+  const handleQuantityChange = (styleId: string, value: string) => {
+    setQuantities((prev) => ({
+      ...prev,
+      [styleId]: parseInt(value) || 0,
+    }));
+  };
+
   const handleAddLog = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (
-      !selectedWorkerId ||
-      !selectedStyleId ||
-      !quantity ||
-      !productionDate ||
-      !userData?.organizationId
-    )
+    if (!selectedWorkerId || !productionDate || !userData?.organizationId)
       return;
 
-    try {
-      await createProductionLog({
+    const logsToCreate = Object.entries(quantities)
+      .filter(([_, quantity]) => quantity > 0)
+      .map(([styleId, quantity]) => ({
         workerId: selectedWorkerId as any,
-        styleId: selectedStyleId as any,
+        styleId: styleId as any,
         organizationId: userData.organizationId,
-        quantity: parseInt(quantity),
+        quantity,
         productionDate,
-      });
+      }));
+
+    if (logsToCreate.length === 0) {
+      // TODO: Show a message to the user that they need to enter at least one quantity
+      return;
+    }
+
+    try {
+      await Promise.all(logsToCreate.map(createProductionLog));
       setSelectedWorkerId("");
-      setSelectedStyleId("");
-      setQuantity("");
+      setQuantities({});
       setProductionDate("");
       setIsAddingLog(false);
     } catch (error) {
-      console.error("Failed to create production log:", error);
+      console.error("Failed to create production logs:", error);
     }
   };
 
@@ -178,36 +186,27 @@ export default function ProductionPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label htmlFor="style">Style</Label>
-                <Select
-                  value={selectedStyleId}
-                  onValueChange={setSelectedStyleId}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a style" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {styles?.map((style) => (
-                      <SelectItem key={style._id} value={style._id}>
-                        {style.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="quantity">Quantity Produced</Label>
-                <Input
-                  id="quantity"
-                  type="number"
-                  min="1"
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                  placeholder="Enter quantity"
-                  required
-                />
+              <div className="space-y-2">
+                <Label>Styles</Label>
+                {styles?.map((style) => (
+                  <div
+                    key={style._id}
+                    className="flex items-center justify-between"
+                  >
+                    <Label htmlFor={`style-${style._id}`}>{style.name}</Label>
+                    <Input
+                      id={`style-${style._id}`}
+                      type="number"
+                      min="0"
+                      value={quantities[style._id] || ""}
+                      onChange={(e) =>
+                        handleQuantityChange(style._id, e.target.value)
+                      }
+                      placeholder="Quantity"
+                      className="w-24"
+                    />
+                  </div>
+                ))}
               </div>
               <div>
                 <Label htmlFor="productionDate">Production Date</Label>
@@ -231,8 +230,7 @@ export default function ProductionPage() {
                   onClick={() => {
                     setIsAddingLog(false);
                     setSelectedWorkerId("");
-                    setSelectedStyleId("");
-                    setQuantity("");
+                    setQuantities({});
                     setProductionDate("");
                   }}
                 >
