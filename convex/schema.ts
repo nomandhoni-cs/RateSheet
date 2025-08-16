@@ -8,6 +8,13 @@ export default defineSchema({
     inviteCode: v.string(), // Unique code for joining organization
     createdBy: v.string(), // Clerk ID of creator
     createdAt: v.number(),
+    // Organization address/location (optional)
+    addressLine1: v.optional(v.string()),
+    addressLine2: v.optional(v.string()),
+    city: v.optional(v.string()),
+    state: v.optional(v.string()),
+    postalCode: v.optional(v.string()),
+    country: v.optional(v.string()),
   })
     .index("by_invite_code", ["inviteCode"])
     .index("by_creator", ["createdBy"]),
@@ -59,21 +66,27 @@ export default defineSchema({
     name: v.string(),
     organizationId: v.id("organizations"),
     sectionId: v.id("sections"),
+    manualId: v.optional(v.string()),
   })
     .index("by_organization", ["organizationId"])
-    .index("by_section", ["sectionId"]),
+    .index("by_section", ["sectionId"])
+    .index("by_org_manualId", ["organizationId", "manualId"]),
 
   styles: defineTable({
     name: v.string(),
     description: v.optional(v.string()),
     organizationId: v.id("organizations"),
-  }).index("by_organization", ["organizationId"]),
+    sectionId: v.optional(v.id("sections")),
+  })
+    .index("by_organization", ["organizationId"])
+    .index("by_section", ["sectionId"]),
 
   styleRates: defineTable({
     styleId: v.id("styles"),
     organizationId: v.id("organizations"),
     rate: v.number(),
     effectiveDate: v.string(), // Format: "YYYY-MM-DD"
+    endDate: v.optional(v.string()), // Optional end date for custom period
   })
     .index("by_organization", ["organizationId"])
     .index("by_style", ["styleId"])
@@ -91,4 +104,36 @@ export default defineSchema({
     .index("by_style", ["styleId"])
     .index("by_date", ["productionDate"])
     .index("by_worker_and_date", ["workerId", "productionDate"]),
+
+  // Organization-level bonus rules
+  bonusRules: defineTable({
+    organizationId: v.id("organizations"),
+    name: v.string(),
+    description: v.optional(v.string()),
+    // criteriaType: how to evaluate threshold
+    // - "quantity": total quantity in period (optionally filtered by style)
+    // - "wage": total base wage in period
+    criteriaType: v.union(v.literal("quantity"), v.literal("wage")),
+    threshold: v.number(),
+    // bonusType: how to compute bonus amount
+    // - "percent": percentage of base
+    // - "fixed": fixed amount added
+    bonusType: v.union(v.literal("percent"), v.literal("fixed")),
+    bonusValue: v.number(),
+    // applyOn: the base used for percent bonus
+    // - "wage": percent of total wage
+    // - "quantity": percent of quantity (then multiplied by optional perUnitValue if provided client-side)
+    applyOn: v.union(v.literal("wage"), v.literal("quantity")),
+    // Optional scoping
+    styleId: v.optional(v.id("styles")),
+    sectionId: v.optional(v.id("sections")),
+    active: v.boolean(),
+    effectiveDate: v.optional(v.string()),
+    endDate: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_organization", ["organizationId"])
+    .index("by_active", ["organizationId", "active"]) 
+    .index("by_effective", ["organizationId", "effectiveDate"]),
 });

@@ -15,7 +15,7 @@ import {
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useState } from "react";
-import { Menu, X, BarChart3, Users, Building2, Palette, ClipboardList, DollarSign } from "lucide-react";
+import { Menu, X, BarChart3, Users, Building2, Palette, ClipboardList, DollarSign, FileText } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 export function Navbar() {
@@ -31,19 +31,24 @@ export function Navbar() {
   const isDashboard = pathname?.startsWith('/dashboard');
   const isOnboarded = userData?.hasCompletedOnboarding;
 
-  const navigation = [
+  const baseNavigation = [
     { name: "Dashboard", href: "/dashboard", icon: BarChart3 },
     { name: "Workers", href: "/dashboard/workers", icon: Users },
     { name: "Sections", href: "/dashboard/sections", icon: Building2 },
     { name: "Styles", href: "/dashboard/styles", icon: Palette },
     { name: "Production", href: "/dashboard/production", icon: ClipboardList },
     { name: "Payroll", href: "/dashboard/payroll", icon: DollarSign },
+    { name: "Bonuses", href: "/dashboard/bonuses", icon: FileText },
+    { name: "Reports", href: "/dashboard/reports", icon: FileText },
   ];
+  const navigation = userData?.role === 'admin'
+    ? [...baseNavigation, { name: "Settings", href: "/dashboard/admin", icon: Building2 }]
+    : baseNavigation;
 
   return (
     <>
       <header className="fixed top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 shadow-sm">
-        <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* Left side - Logo and Dashboard Menu */}
           <div className="flex items-center space-x-4">
             {/* Dashboard Menu Button */}
@@ -143,6 +148,14 @@ export function Navbar() {
             </SignedOut>
 
             <SignedIn>
+              {/* Show current user and role */}
+              {userData && (
+                <div className="hidden md:flex items-center gap-2 pr-1 text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">{userData.name}</span>
+                  <span>·</span>
+                  <span className="capitalize px-2 py-0.5 rounded bg-accent/60 text-foreground">{userData.role}</span>
+                </div>
+              )}
               <UserButton
                 appearance={{
                   elements: {

@@ -6,6 +6,7 @@ import { ConvexClientProvider } from "@/components/ConvexClientProvider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { ToasterProvider } from "@/components/ToasterProvider";
 
 const lora = Lora({
   variable: "--font-lora-sans",
@@ -49,6 +50,7 @@ export default function RootLayout({
                 <Navbar />
                 {children}
               </div>
+              <ToasterProvider />
             </ConvexClientProvider>
           </ThemeProvider>
         </body>

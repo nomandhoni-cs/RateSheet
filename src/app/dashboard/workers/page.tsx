@@ -36,6 +36,7 @@ export default function WorkersPage() {
   const [isAddingWorker, setIsAddingWorker] = useState(false);
   const [newWorkerName, setNewWorkerName] = useState("");
   const [selectedSectionId, setSelectedSectionId] = useState<string>("");
+  const [manualId, setManualId] = useState("");
 
   const userData = useQuery(
     api.users.getUserByClerkId,
@@ -73,9 +74,11 @@ export default function WorkersPage() {
         name: newWorkerName.trim(),
         sectionId: selectedSectionId as any,
         organizationId: userData.organizationId,
+        manualId: manualId.trim() || undefined,
       });
       setNewWorkerName("");
       setSelectedSectionId("");
+      setManualId("");
       setIsAddingWorker(false);
     } catch (error) {
       console.error("Failed to create worker:", error);
@@ -142,6 +145,16 @@ export default function WorkersPage() {
                 />
               </div>
               <div>
+                <Label htmlFor="manualId">Manual ID Number</Label>
+                <Input
+                  id="manualId"
+                  value={manualId}
+                  onChange={(e) => setManualId(e.target.value)}
+                  required
+                  placeholder="e.g., W-1024"
+                />
+              </div>
+              <div>
                 <Label htmlFor="section">Section</Label>
                 <Select
                   value={selectedSectionId}
@@ -172,6 +185,7 @@ export default function WorkersPage() {
                     setIsAddingWorker(false);
                     setNewWorkerName("");
                     setSelectedSectionId("");
+                    setManualId("");
                   }}
                 >
                   Cancel

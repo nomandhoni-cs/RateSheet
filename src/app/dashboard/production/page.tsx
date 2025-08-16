@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
@@ -30,17 +30,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import WorkerSelect from "@/components/WorkerSelect";
+import { toast } from "sonner";
 
 export default function ProductionPage() {
   const { user } = useUser();
   const [isAddingLog, setIsAddingLog] = useState(false);
   const [selectedWorkerId, setSelectedWorkerId] = useState<string>("");
-  const [selectedStyleId, setSelectedStyleId] = useState<string>("");
-  const [quantity, setQuantity] = useState("");
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [productionDate, setProductionDate] = useState("");
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0]
   );
+  const [focusedStyleId, setFocusedStyleId] = useState<string>("");
+  const [allSectionsChecked, setAllSectionsChecked] = useState(true);
+  const [selectedSectionIds, setSelectedSectionIds] = useState<Record<string, boolean>>({});
 
   const userData = useQuery(
     api.users.getUserByClerkId,
@@ -59,6 +63,11 @@ export default function ProductionPage() {
     userData?.organizationId
       ? { organizationId: userData.organizationId }
       : "skip"
+  );
+
+  const sections = useQuery(
+    api.sections.getAllSections,
+    userData?.organizationId ? { organizationId: userData.organizationId } : "skip"
   );
 
   const productionLogs = useQuery(
@@ -81,32 +90,60 @@ export default function ProductionPage() {
   // Get today's date in YYYY-MM-DD format
   const today = new Date().toISOString().split("T")[0];
 
+  const handleQuantityChange = (styleId: string, value: string) => {
+    setQuantities((prev) => ({
+      ...prev,
+      [styleId]: parseInt(value) || 0,
+    }));
+  };
+
+  const filteredStyles = useMemo(() => {
+    if (!styles) return [] as any[];
+    if (allSectionsChecked) return styles;
+    const ids = Object.keys(selectedSectionIds).filter((id) => selectedSectionIds[id]);
+    if (ids.length === 0) return styles; // fallback to all if none selected
+    return styles.filter((s: any) => (s.sectionId ? ids.includes(s.sectionId) : false));
+  }, [styles, allSectionsChecked, selectedSectionIds]);
+
   const handleAddLog = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (
-      !selectedWorkerId ||
-      !selectedStyleId ||
-      !quantity ||
-      !productionDate ||
-      !userData?.organizationId
-    )
+    if (!selectedWorkerId) {
+      toast.error("Please select a worker");
       return;
+    }
+    if (!productionDate) {
+      toast.error("Please choose a production date");
+      return;
+    }
+    if (!userData?.organizationId) return;
+
+    const orgId = userData.organizationId as any;
+
+    const logsToCreate = Object.entries(quantities)
+      .filter(([_, quantity]) => quantity > 0)
+      .map(([styleId, quantity]) => ({
+        workerId: selectedWorkerId as any,
+        styleId: styleId as any,
+        organizationId: orgId,
+        quantity,
+        productionDate,
+      }));
+
+    if (logsToCreate.length === 0) {
+      toast.error("Enter at least one quantity");
+      return;
+    }
 
     try {
-      await createProductionLog({
-        workerId: selectedWorkerId as any,
-        styleId: selectedStyleId as any,
-        organizationId: userData.organizationId,
-        quantity: parseInt(quantity),
-        productionDate,
-      });
+      await Promise.all(logsToCreate.map((args) => createProductionLog(args)));
+      toast.success("Production logs added");
       setSelectedWorkerId("");
-      setSelectedStyleId("");
-      setQuantity("");
+      setQuantities({});
       setProductionDate("");
       setIsAddingLog(false);
     } catch (error) {
-      console.error("Failed to create production log:", error);
+      console.error("Failed to create production logs:", error);
+      toast.error("Failed to add production logs");
     }
   };
 
@@ -114,8 +151,10 @@ export default function ProductionPage() {
     if (confirm("Are you sure you want to delete this production log?")) {
       try {
         await deleteProductionLog({ logId: logId as any });
+        toast.success("Production log deleted");
       } catch (error) {
         console.error("Failed to delete production log:", error);
+        toast.error("Failed to delete production log");
       }
     }
   };
@@ -161,53 +200,73 @@ export default function ProductionPage() {
             <form onSubmit={handleAddLog} className="space-y-4">
               <div>
                 <Label htmlFor="worker">Worker</Label>
-                <Select
+                <WorkerSelect
+                  organizationId={userData?.organizationId as any}
                   value={selectedWorkerId}
-                  onValueChange={setSelectedWorkerId}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a worker" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {workers?.map((worker) => (
-                      <SelectItem key={worker._id} value={worker._id}>
-                        {worker.name} ({worker.section?.name})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="style">Style</Label>
-                <Select
-                  value={selectedStyleId}
-                  onValueChange={setSelectedStyleId}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a style" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {styles?.map((style) => (
-                      <SelectItem key={style._id} value={style._id}>
-                        {style.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="quantity">Quantity Produced</Label>
-                <Input
-                  id="quantity"
-                  type="number"
-                  min="1"
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                  placeholder="Enter quantity"
-                  required
+                  onChange={setSelectedWorkerId}
+                  placeholder="Search worker by name or ID"
                 />
+              </div>
+              <div>
+                <Label>Filter Styles by Section</Label>
+                <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                  <label className="flex items-center gap-2 text-sm p-2 rounded border">
+                    <input
+                      type="checkbox"
+                      checked={allSectionsChecked}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setAllSectionsChecked(checked);
+                        if (checked) setSelectedSectionIds({});
+                      }}
+                    />
+                    <span>All</span>
+                  </label>
+                  {sections?.map((sec) => (
+                    <label key={sec._id} className="flex items-center gap-2 text-sm p-2 rounded border">
+                      <input
+                        type="checkbox"
+                        checked={allSectionsChecked ? true : !!selectedSectionIds[sec._id]}
+                        disabled={allSectionsChecked}
+                        onChange={(e) =>
+                          setSelectedSectionIds((prev) => ({ ...prev, [sec._id]: e.target.checked }))
+                        }
+                      />
+                      <span>{sec.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Styles</Label>
+                {filteredStyles?.map((style) => (
+                  <div
+                    key={style._id}
+                    className={`flex items-center justify-between rounded px-2 py-1 ${focusedStyleId === style._id ? "bg-muted" : ""}`}
+                  >
+                    <Label htmlFor={`style-${style._id}`}>
+                      {style.name}
+                      {style.sectionId && (
+                        <span className="ml-2 text-xs text-muted-foreground">(
+                          {sections?.find((s) => s._id === style.sectionId)?.name}
+                        )</span>
+                      )}
+                    </Label>
+                    <Input
+                      id={`style-${style._id}`}
+                      type="number"
+                      min="0"
+                      value={quantities[style._id] || ""}
+                      onFocus={() => setFocusedStyleId(style._id)}
+                      onBlur={() => setFocusedStyleId("")}
+                      onChange={(e) =>
+                        handleQuantityChange(style._id, e.target.value)
+                      }
+                      placeholder="Quantity"
+                      className="w-24"
+                    />
+                  </div>
+                ))}
               </div>
               <div>
                 <Label htmlFor="productionDate">Production Date</Label>
@@ -231,8 +290,7 @@ export default function ProductionPage() {
                   onClick={() => {
                     setIsAddingLog(false);
                     setSelectedWorkerId("");
-                    setSelectedStyleId("");
-                    setQuantity("");
+                    setQuantities({});
                     setProductionDate("");
                   }}
                 >
@@ -289,7 +347,10 @@ export default function ProductionPage() {
                     <TableRow key={log._id}>
                       <TableCell className="font-medium">
                         <div>
-                          <div>{log.worker?.name}</div>
+                          <div>
+                            {log.worker?.name}
+                            {log.worker?.manualId ? ` (${log.worker.manualId})` : ""}
+                          </div>
                           <div className="text-sm text-muted-foreground sm:hidden">
                             {log.worker?.section?.name}
                           </div>

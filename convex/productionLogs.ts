@@ -101,6 +101,7 @@ export const calculateWorkerPayroll = query({
     workerId: v.id("workers"),
     startDate: v.string(),
     endDate: v.string(),
+    bonusRuleId: v.optional(v.id("bonusRules")),
   },
   handler: async (ctx, args) => {
     const logs = await ctx.db
@@ -115,14 +116,29 @@ export const calculateWorkerPayroll = query({
       .collect();
 
     let totalPay = 0;
-    const payrollDetails = [];
+    const payrollDetails: any[] = [];
+
+    // Aggregates for potential bonus scoping
+    let scopedQuantity = 0;
+    let scopedWage = 0;
+
+    // Preload bonus rule if provided
+    const bonusRule = args.bonusRuleId ? await ctx.db.get(args.bonusRuleId) : null;
 
     for (const log of logs) {
-      // Get the rate for this style on the production date
+      // Get the rate for this style on the production date (within active period)
       const rates = await ctx.db
         .query("styleRates")
         .withIndex("by_style", (q) => q.eq("styleId", log.styleId))
-        .filter((q) => q.lte(q.field("effectiveDate"), log.productionDate))
+        .filter((q) =>
+          q.and(
+            q.lte(q.field("effectiveDate"), log.productionDate),
+            q.or(
+              q.eq(q.field("endDate"), undefined as any),
+              q.gte(q.field("endDate"), log.productionDate)
+            )
+          )
+        )
         .collect();
 
       const currentRate = rates.sort((a, b) =>
@@ -133,7 +149,19 @@ export const calculateWorkerPayroll = query({
         const logPay = log.quantity * currentRate.rate;
         totalPay += logPay;
 
-        const style = await ctx.db.get(log.styleId);
+        const [style, worker] = await Promise.all([
+          ctx.db.get(log.styleId),
+          ctx.db.get(log.workerId),
+        ]);
+
+        // For bonus scoping, include this log if it matches filters (if any)
+        const matchesStyle = !bonusRule?.styleId || bonusRule.styleId === log.styleId;
+        const matchesSection = !bonusRule?.sectionId || (worker && worker.sectionId === bonusRule.sectionId);
+        if (matchesStyle && matchesSection) {
+          scopedQuantity += log.quantity;
+          scopedWage += logPay;
+        }
+
         payrollDetails.push({
           ...log,
           style,
@@ -143,9 +171,54 @@ export const calculateWorkerPayroll = query({
       }
     }
 
+    // Compute bonus if a rule is provided
+    let bonusAmount = 0;
+    let criteriaValue = 0;
+    let applied = false;
+
+    if (bonusRule) {
+      // Determine criteria value based on rule
+      criteriaValue = bonusRule.criteriaType === "quantity" ? scopedQuantity : scopedWage;
+      const withinDate = (
+        (!bonusRule.effectiveDate || bonusRule.effectiveDate <= args.endDate) &&
+        (!bonusRule.endDate || bonusRule.endDate >= args.startDate)
+      );
+      const isActive = bonusRule.active === true;
+      if (isActive && withinDate && criteriaValue > bonusRule.threshold) {
+        applied = true;
+        // Determine basis for bonus amount
+        const basis = bonusRule.applyOn === "wage" ? totalPay : scopedQuantity;
+        if (bonusRule.bonusType === "percent") {
+          bonusAmount = (basis * bonusRule.bonusValue) / 100;
+        } else {
+          bonusAmount = bonusRule.bonusValue;
+        }
+      }
+    }
+
+    const totalWithBonus = totalPay + bonusAmount;
+
     return {
       totalPay,
       details: payrollDetails,
+      bonus: bonusRule
+        ? {
+            applied,
+            ruleId: bonusRule._id,
+            name: bonusRule.name,
+            criteriaType: bonusRule.criteriaType,
+            threshold: bonusRule.threshold,
+            criteriaValue,
+            bonusType: bonusRule.bonusType,
+            bonusValue: bonusRule.bonusValue,
+            applyOn: bonusRule.applyOn,
+            scopedQuantity,
+            scopedWage,
+            bonusAmount,
+            totalWithBonus,
+          }
+        : null,
+      totalWithBonus,
     };
   },
 });

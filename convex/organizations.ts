@@ -12,6 +12,12 @@ export const createOrganization = mutation({
     name: v.string(),
     description: v.optional(v.string()),
     createdBy: v.string(), // Clerk ID
+    addressLine1: v.optional(v.string()),
+    addressLine2: v.optional(v.string()),
+    city: v.optional(v.string()),
+    state: v.optional(v.string()),
+    postalCode: v.optional(v.string()),
+    country: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     // Generate unique invite code
@@ -33,6 +39,12 @@ export const createOrganization = mutation({
       inviteCode,
       createdBy: args.createdBy,
       createdAt: Date.now(),
+      addressLine1: args.addressLine1,
+      addressLine2: args.addressLine2,
+      city: args.city,
+      state: args.state,
+      postalCode: args.postalCode,
+      country: args.country,
     });
 
     return { organizationId, inviteCode };
@@ -81,6 +93,12 @@ export const updateOrganization = mutation({
     organizationId: v.id("organizations"),
     name: v.string(),
     description: v.optional(v.string()),
+    addressLine1: v.optional(v.string()),
+    addressLine2: v.optional(v.string()),
+    city: v.optional(v.string()),
+    state: v.optional(v.string()),
+    postalCode: v.optional(v.string()),
+    country: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { organizationId, ...updates } = args;

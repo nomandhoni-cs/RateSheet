@@ -7,8 +7,25 @@ export const createWorker = mutation({
     name: v.string(),
     sectionId: v.id("sections"),
     organizationId: v.id("organizations"),
+    manualId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    // If manualId is provided, ensure it's unique within the organization
+    if (args.manualId) {
+      const existing = await ctx.db
+        .query("workers")
+        .withIndex("by_org_manualId", (q) =>
+          q.eq("organizationId", args.organizationId).eq("manualId", args.manualId!)
+        )
+        .unique();
+
+      if (existing) {
+        throw new Error(
+          "A worker with this manual ID already exists in the organization."
+        );
+      }
+    }
+
     return await ctx.db.insert("workers", args);
   },
 });
