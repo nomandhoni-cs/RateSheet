@@ -6,7 +6,9 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "cf:prepare": "npx @cloudflare/next-on-pages@latest prepare",
+    "cf:build": "npm run cf:prepare && npm run build"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.31.1",
