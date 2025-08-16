@@ -113,11 +113,11 @@ export default function StylesPage() {
   }
 
   return (
-    <div className="space-y-4 lg:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+    <div className="space-y-6 lg:space-y-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold">Styles & Rates</h1>
-          <p className="text-sm lg:text-base text-muted-foreground">
+          <h1 className="text-3xl lg:text-4xl font-sans font-bold">Styles & Rates</h1>
+          <p className="text-base lg:text-lg text-muted-foreground mt-2">
             Manage product styles and their time-sensitive rates
           </p>
         </div>

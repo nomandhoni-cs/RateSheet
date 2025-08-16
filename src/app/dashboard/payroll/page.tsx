@@ -81,10 +81,10 @@ export default function PayrollPage() {
   }
 
   return (
-    <div className="space-y-4 lg:space-y-6">
+    <div className="space-y-6 lg:space-y-8">
       <div>
-        <h1 className="text-2xl lg:text-3xl font-bold">Payroll Calculator</h1>
-        <p className="text-sm lg:text-base text-muted-foreground">
+        <h1 className="text-3xl lg:text-4xl font-sans font-bold">Payroll Calculator</h1>
+        <p className="text-base lg:text-lg text-muted-foreground mt-2">
           Calculate worker payroll based on production logs and style rates
         </p>
       </div>

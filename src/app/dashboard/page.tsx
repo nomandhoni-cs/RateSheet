@@ -74,15 +74,15 @@ export default function DashboardPage() {
     todayLogs?.reduce((sum, log) => sum + log.quantity, 0) || 0;
 
   return (
-    <div className="space-y-4 lg:space-y-6">
+    <div className="space-y-6 lg:space-y-8">
       <div>
-        <h1 className="text-2xl lg:text-3xl font-bold">Dashboard</h1>
-        <p className="text-sm lg:text-base text-muted-foreground">
-          Welcome to {organization.name} - {userData.role}
+        <h1 className="text-3xl lg:text-4xl font-sans font-bold">Dashboard</h1>
+        <p className="text-base lg:text-lg text-muted-foreground mt-2">
+          Welcome to {organization.name} - <span className="capitalize font-medium">{userData.role}</span>
         </p>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Workers</CardTitle>
@@ -134,7 +134,7 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
         <Card>
           <CardHeader>
             <CardTitle>Recent Production Logs</CardTitle>
