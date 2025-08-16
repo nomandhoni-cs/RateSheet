@@ -38,6 +38,7 @@ export default function PayrollPage() {
   const [endDate, setEndDate] = useState("");
   const [selectedBonusRuleId, setSelectedBonusRuleId] = useState<string>("none");
   const [showPayroll, setShowPayroll] = useState(false);
+  const [customColName, setCustomColName] = useState<string>("");
 
   const userData = useQuery(
     api.users.getUserByClerkId,
@@ -126,19 +127,21 @@ export default function PayrollPage() {
     if (!payrollData) return;
     const orgName = organization?.name ?? "Organization";
     const workerName = workers?.find((w) => w._id === selectedWorkerId)?.name ?? "Worker";
+    const header = ["Date", "Style", "Quantity", "Rate", "Pay", ...(customColName.trim() ? [customColName.trim()] : [])];
     const rows = [
       ["Organization", orgName],
       ["Worker", workerName],
       ["Period", `${startDate} to ${endDate}`],
       ...(payrollData.bonus && payrollData.bonus.applied ? [["Bonus Rule", payrollData.bonus.name]] : []),
       [],
-      ["Date", "Style", "Quantity", "Rate", "Pay"],
+      header,
       ...payrollData.details.map((d: any) => [
         d.productionDate,
         d.style?.name ?? "",
         String(d.quantity),
         String(d.rate),
         String(d.pay),
+        ...(customColName.trim() ? [""] : []),
       ]),
       [],
       ["Base Total Pay", String(payrollData.totalPay)],
@@ -153,6 +156,7 @@ export default function PayrollPage() {
     if (!payrollData) return;
     const orgName = organization?.name ?? "Organization";
     const workerName = workers?.find((w) => w._id === selectedWorkerId)?.name ?? "Worker";
+    const headerCols = ["Date", "Style", "Quantity", "Rate", "Pay", ...(customColName.trim() ? [customColName.trim()] : [])];
     const tableRows = payrollData.details.map((d: any) => `
       <tr>
         <td>${d.productionDate}</td>
@@ -160,6 +164,7 @@ export default function PayrollPage() {
         <td>${d.quantity}</td>
         <td>৳${d.rate.toFixed(2)}</td>
         <td>৳${d.pay.toFixed(2)}</td>
+        ${customColName.trim() ? '<td></td>' : ''}
       </tr>
     `).join("");
     const bonusHtml = payrollData.bonus ? `
@@ -175,7 +180,7 @@ export default function PayrollPage() {
       <h2>Payroll</h2>
       <div><strong>Worker:</strong> ${workerName}</div>
       <div><strong>Period:</strong> ${startDate} to ${endDate}</div>
-      <table><thead><tr><th>Date</th><th>Style</th><th>Quantity</th><th>Rate</th><th>Pay</th></tr></thead><tbody>${tableRows || '<tr><td colspan="5">No data</td></tr>'}</tbody></table>
+      <table><thead><tr>${headerCols.map(h => `<th>${h}</th>`).join("")}</tr></thead><tbody>${tableRows || `<tr><td colspan="${headerCols.length}">No data</td></tr>`}</tbody></table>
       ${bonusHtml}
       <h2>Total</h2>
       <div><strong>Base Total Pay:</strong> ৳${payrollData.totalPay.toFixed(2)}</div>
@@ -328,6 +333,10 @@ export default function PayrollPage() {
                 </Table>
               </div>
             )}
+            <div className="mt-4">
+              <Label htmlFor="payrollCustomCol">Custom Column (optional)</Label>
+              <Input id="payrollCustomCol" placeholder="e.g., Notes" value={customColName} onChange={(e)=>setCustomColName(e.target.value)} />
+            </div>
             <div className="mt-4 flex flex-col sm:flex-row gap-2">
               <Button onClick={exportPayrollCSV} variant="outline" className="w-full sm:w-auto">Export CSV</Button>
               <Button onClick={exportPayrollPDF} className="w-full sm:w-auto">Export PDF</Button>
