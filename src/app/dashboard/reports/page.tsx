@@ -29,6 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import WorkerSelect from "@/components/WorkerSelect";
 
 export default function ReportsPage() {
   const { user } = useUser();
@@ -419,16 +420,12 @@ export default function ReportsPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label htmlFor="worker">Worker</Label>
-              <Select value={selectedWorkerId} onValueChange={setSelectedWorkerId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a worker" />
-                </SelectTrigger>
-                <SelectContent>
-                  {workers?.map((w: any) => (
-                    <SelectItem key={w._id} value={w._id}>{w.name} ({w.section?.name})</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <WorkerSelect
+                organizationId={userData?.organizationId as any}
+                value={selectedWorkerId}
+                onChange={setSelectedWorkerId}
+                placeholder="Search worker by name or ID"
+              />
             </div>
             <div>
               <Label htmlFor="startDateWorker">Start Date</Label>

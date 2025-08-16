@@ -145,11 +145,12 @@ export default function WorkersPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="manualId">Manual ID (Optional)</Label>
+                <Label htmlFor="manualId">Manual ID Number</Label>
                 <Input
                   id="manualId"
                   value={manualId}
                   onChange={(e) => setManualId(e.target.value)}
+                  required
                   placeholder="e.g., W-1024"
                 />
               </div>

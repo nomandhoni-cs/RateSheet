@@ -30,6 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import WorkerSelect from "@/components/WorkerSelect";
 
 export default function ProductionPage() {
   const { user } = useUser();
@@ -92,12 +93,14 @@ export default function ProductionPage() {
     if (!selectedWorkerId || !productionDate || !userData?.organizationId)
       return;
 
+    const orgId = userData.organizationId as any;
+
     const logsToCreate = Object.entries(quantities)
       .filter(([_, quantity]) => quantity > 0)
       .map(([styleId, quantity]) => ({
         workerId: selectedWorkerId as any,
         styleId: styleId as any,
-        organizationId: userData.organizationId,
+        organizationId: orgId,
         quantity,
         productionDate,
       }));
@@ -108,7 +111,7 @@ export default function ProductionPage() {
     }
 
     try {
-      await Promise.all(logsToCreate.map(createProductionLog));
+      await Promise.all(logsToCreate.map((args) => createProductionLog(args)));
       setSelectedWorkerId("");
       setQuantities({});
       setProductionDate("");
@@ -169,22 +172,12 @@ export default function ProductionPage() {
             <form onSubmit={handleAddLog} className="space-y-4">
               <div>
                 <Label htmlFor="worker">Worker</Label>
-                <Select
+                <WorkerSelect
+                  organizationId={userData?.organizationId as any}
                   value={selectedWorkerId}
-                  onValueChange={setSelectedWorkerId}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a worker" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {workers?.map((worker) => (
-                      <SelectItem key={worker._id} value={worker._id}>
-                        {worker.name} ({worker.section?.name})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={setSelectedWorkerId}
+                  placeholder="Search worker by name or ID"
+                />
               </div>
               <div className="space-y-2">
                 <Label>Styles</Label>
@@ -287,7 +280,10 @@ export default function ProductionPage() {
                     <TableRow key={log._id}>
                       <TableCell className="font-medium">
                         <div>
-                          <div>{log.worker?.name}</div>
+                          <div>
+                            {log.worker?.name}
+                            {log.worker?.manualId ? ` (${log.worker.manualId})` : ""}
+                          </div>
                           <div className="text-sm text-muted-foreground sm:hidden">
                             {log.worker?.section?.name}
                           </div>

@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import WorkerSelect from "@/components/WorkerSelect";
 import {
   Table,
   TableBody,
@@ -185,21 +186,12 @@ export default function PayrollPage() {
         <CardContent className="space-y-4">
           <div>
             <Label htmlFor="worker">Worker</Label>
-            <Select
+            <WorkerSelect
+              organizationId={userData?.organizationId as any}
               value={selectedWorkerId}
-              onValueChange={setSelectedWorkerId}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a worker" />
-              </SelectTrigger>
-              <SelectContent>
-                {workers?.map((worker) => (
-                  <SelectItem key={worker._id} value={worker._id}>
-                    {worker.name} ({worker.section?.name})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onChange={setSelectedWorkerId}
+              placeholder="Search worker by name or ID"
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -250,9 +242,7 @@ export default function PayrollPage() {
           <CardHeader>
             <CardTitle>Payroll Results</CardTitle>
             <CardDescription>
-              Payroll calculation for{" "}
-              {workers?.find((w) => w._id === selectedWorkerId)?.name}
-              from {startDate} to {endDate}
+              Payroll calculation for {(() => { const w = workers?.find((x)=>x._id===selectedWorkerId); return w ? `${w.name}${w.manualId ? ` (${w.manualId})` : ""}` : ""; })()} from {startDate} to {endDate}
             </CardDescription>
           </CardHeader>
           <CardContent>

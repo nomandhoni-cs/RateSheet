@@ -23,6 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import StyleCurrentRate from "@/components/StyleCurrentRate";
 
 export default function StylesPage() {
   const { user } = useUser();
@@ -278,6 +279,7 @@ export default function StylesPage() {
                     <TableHead className="hidden md:table-cell">
                       Description
                     </TableHead>
+                    <TableHead className="hidden md:table-cell">Current Rate</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -289,11 +291,15 @@ export default function StylesPage() {
                           <div>{style.name}</div>
                           <div className="text-sm text-muted-foreground md:hidden">
                             {style.description || "No description"}
+                            <span className="ml-2">• Rate: <StyleCurrentRate styleId={style._id as any} date={today} /></span>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         {style.description || "No description"}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <StyleCurrentRate styleId={style._id as any} date={today} />
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex flex-col sm:flex-row gap-2 justify-end">
