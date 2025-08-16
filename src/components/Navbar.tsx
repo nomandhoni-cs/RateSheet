@@ -43,7 +43,7 @@ export function Navbar() {
   return (
     <>
       <header className="fixed top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 shadow-sm">
-        <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* Left side - Logo and Dashboard Menu */}
           <div className="flex items-center space-x-4">
             {/* Dashboard Menu Button */}
