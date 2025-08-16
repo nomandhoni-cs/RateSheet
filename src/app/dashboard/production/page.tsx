@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { LoadingSpinner } from "@/components/ui/loading";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -64,9 +65,9 @@ export default function ProductionPage() {
     api.productionLogs.getProductionLogsByDate,
     userData?.organizationId
       ? {
-          date: selectedDate,
-          organizationId: userData.organizationId,
-        }
+        date: selectedDate,
+        organizationId: userData.organizationId,
+      }
       : "skip"
   );
 
@@ -120,7 +121,15 @@ export default function ProductionPage() {
   };
 
   if (!userData) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="text-center animate-fadeInUp">
+          <LoadingSpinner size="lg" className="mb-4 mx-auto" />
+          <h2 className="text-lg font-sans font-medium text-foreground mb-2">Loading Production</h2>
+          <p className="text-sm text-muted-foreground">Fetching production data...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

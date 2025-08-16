@@ -53,9 +53,9 @@ export default function DashboardPage() {
     api.productionLogs.getProductionLogsByDate,
     userData?.organizationId
       ? {
-          date: today,
-          organizationId: userData.organizationId,
-        }
+        date: today,
+        organizationId: userData.organizationId,
+      }
       : "skip"
   );
 
@@ -225,7 +225,7 @@ export default function DashboardPage() {
               <p className="text-xs text-muted-foreground mb-2">
                 Organization Code:
               </p>
-              <code className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
+              <code className="text-sm font-mono bg-gray-100 text-black  px-2 py-1 rounded">
                 {organization.inviteCode}
               </code>
               <p className="text-xs text-muted-foreground mt-1">

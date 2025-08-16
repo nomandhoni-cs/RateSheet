@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Background } from "@/components/Background";
 import { Footer } from "@/components/Footer";
+import { LoadingSpinner } from "@/components/ui/loading";
 
 export default function Home() {
   const { user, isLoaded } = useUser();
@@ -32,7 +33,7 @@ export default function Home() {
 
       <SignedOut>
         <Background />
-        <main className="flex-1 w-full">
+        <main className="flex-1 w-full pt-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="flex flex-col items-center justify-center min-h-[70vh] text-center">
               <div className="max-w-4xl mx-auto">
@@ -85,10 +86,11 @@ export default function Home() {
 
       <SignedIn>
         {/* This will be handled by UserSync and redirect */}
-        <main className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading your dashboard...</p>
+        <main className="flex-1 flex items-center justify-center pt-16">
+          <div className="text-center animate-fadeInUp">
+            <LoadingSpinner size="lg" className="mb-4 mx-auto" />
+            <h2 className="text-lg font-sans font-medium text-foreground mb-2">Loading Dashboard</h2>
+            <p className="text-sm text-muted-foreground">Redirecting you to your workspace...</p>
           </div>
         </main>
       </SignedIn>

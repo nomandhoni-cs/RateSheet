@@ -4,6 +4,7 @@ import { useUser } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { redirect } from "next/navigation";
+import { LoadingPage } from "@/components/ui/loading";
 
 export default function DashboardLayout({
   children,
@@ -25,17 +26,16 @@ export default function DashboardLayout({
   // Show loading while checking authentication
   if (!isLoaded || !userData) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
+      <LoadingPage
+        title="Loading Dashboard"
+        description="Setting up your workspace..."
+        variant="pulse"
+      />
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pt-16">
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>

@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { LoadingSpinner } from "@/components/ui/loading";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -101,7 +102,15 @@ export default function SectionsPage() {
   };
 
   if (!userData) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="text-center animate-fadeInUp">
+          <LoadingSpinner size="lg" className="mb-4 mx-auto" />
+          <h2 className="text-lg font-sans font-medium text-foreground mb-2">Loading Sections</h2>
+          <p className="text-sm text-muted-foreground">Fetching section data...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

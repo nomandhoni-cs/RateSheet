@@ -217,19 +217,3 @@ export function Navbar() {
     </>
   );
 }
-
-function MobileNav() {
-  return (
-    <nav className="md:hidden border-t border-border/40 bg-background/95 backdrop-blur-xl">
-      <SignedOut>
-        <div className="pt-3 border-t border-border/40 space-y-2">
-          <SignInButton mode="modal">
-            <Button variant="outline" size="sm" className="w-full">
-              Sign In
-            </Button>
-          </SignInButton>
-        </div>
-      </SignedOut>
-    </nav>
-  );
-}
