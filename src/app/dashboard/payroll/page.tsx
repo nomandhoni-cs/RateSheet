@@ -49,6 +49,11 @@ export default function PayrollPage() {
       : "skip"
   );
 
+  const organization = useQuery(
+    api.organizations.getOrganization,
+    userData?.organizationId ? { organizationId: userData.organizationId as any } : "skip"
+  );
+
   const payrollData = useQuery(
     api.productionLogs.calculateWorkerPayroll,
     selectedWorkerId && startDate && endDate && showPayroll
@@ -75,6 +80,87 @@ export default function PayrollPage() {
     setEndDate("");
     setShowPayroll(false);
   };
+
+  function download(filename: string, content: string, mime: string) {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function printHtml(title: string, bodyHtml: string) {
+    const w = window.open("", "_blank");
+    if (!w) return;
+    w.document.write(`<!doctype html><html><head><meta charset='utf-8'/><title>${title}</title>
+      <style>
+        body{font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial, Noto Sans, "Apple Color Emoji","Segoe UI Emoji"; padding:24px;}
+        h1{font-size:22px;margin:0 0 8px}
+        h2{font-size:18px;margin:16px 0 8px}
+        .muted{color:#666}
+        table{border-collapse:collapse;width:100%;margin-top:8px}
+        th,td{border:1px solid #ddd;padding:8px;font-size:12px}
+        th{text-align:left;background:#f6f6f6}
+      </style>
+    </head><body>${bodyHtml}</body></html>`);
+    w.document.close();
+    w.focus();
+    w.print();
+  }
+
+  function exportPayrollCSV() {
+    if (!payrollData) return;
+    const orgName = organization?.name ?? "Organization";
+    const workerName = workers?.find((w) => w._id === selectedWorkerId)?.name ?? "Worker";
+    const rows = [
+      ["Organization", orgName],
+      ["Worker", workerName],
+      ["Period", `${startDate} to ${endDate}`],
+      [],
+      ["Date", "Style", "Quantity", "Rate", "Pay"],
+      ...payrollData.details.map((d: any) => [
+        d.productionDate,
+        d.style?.name ?? "",
+        String(d.quantity),
+        String(d.rate),
+        String(d.pay),
+      ]),
+      [],
+      ["Total Pay", String(payrollData.totalPay)],
+    ];
+    const csv = rows.map(r => r.map(v => `"${String(v).replaceAll('"','""')}"`).join(",")).join("\n");
+    download(`payroll-${workerName}-${startDate}-${endDate}.csv`, csv, "text/csv;charset=utf-8");
+  }
+
+  function exportPayrollPDF() {
+    if (!payrollData) return;
+    const orgName = organization?.name ?? "Organization";
+    const workerName = workers?.find((w) => w._id === selectedWorkerId)?.name ?? "Worker";
+    const tableRows = payrollData.details.map((d: any) => `
+      <tr>
+        <td>${d.productionDate}</td>
+        <td>${d.style?.name ?? ""}</td>
+        <td>${d.quantity}</td>
+        <td>৳${d.rate.toFixed(2)}</td>
+        <td>৳${d.pay.toFixed(2)}</td>
+      </tr>
+    `).join("");
+    const html = `
+      <h1>${orgName}</h1>
+      <div class="muted">Generated: ${new Date().toLocaleString()}</div>
+      <h2>Payroll</h2>
+      <div><strong>Worker:</strong> ${workerName}</div>
+      <div><strong>Period:</strong> ${startDate} to ${endDate}</div>
+      <table><thead><tr><th>Date</th><th>Style</th><th>Quantity</th><th>Rate</th><th>Pay</th></tr></thead><tbody>${tableRows || '<tr><td colspan="5">No data</td></tr>'}</tbody></table>
+      <h2>Total</h2>
+      <div><strong>Total Pay:</strong> ৳${payrollData.totalPay.toFixed(2)}</div>
+    `;
+    printHtml(`Payroll - ${workerName}`, html);
+  }
 
   if (!userData) {
     return <div>Loading...</div>;
@@ -200,7 +286,7 @@ export default function PayrollPage() {
                         <TableCell>{detail.quantity}</TableCell>
                         <TableCell>৳{detail.rate.toFixed(2)}</TableCell>
                         <TableCell className="text-right font-medium">
-                          ${detail.pay.toFixed(2)}
+                          ৳{detail.pay.toFixed(2)}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -208,6 +294,10 @@ export default function PayrollPage() {
                 </Table>
               </div>
             )}
+            <div className="mt-4 flex flex-col sm:flex-row gap-2">
+              <Button onClick={exportPayrollCSV} variant="outline" className="w-full sm:w-auto">Export CSV</Button>
+              <Button onClick={exportPayrollPDF} className="w-full sm:w-auto">Export PDF</Button>
+            </div>
           </CardContent>
         </Card>
       )}
