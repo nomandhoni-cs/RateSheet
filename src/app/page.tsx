@@ -8,6 +8,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { Background } from "@/components/Background";
 
 export default function Home() {
   const { user, isLoaded } = useUser();
@@ -29,6 +30,7 @@ export default function Home() {
       <UserSync />
 
       <SignedOut>
+        <Background />
         <div className="flex flex-col items-center justify-center min-h-[70vh] text-center">
           <div className="max-w-4xl mx-auto">
             <h1 className="text-4xl font-sans md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">

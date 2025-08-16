@@ -5,7 +5,6 @@ import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 

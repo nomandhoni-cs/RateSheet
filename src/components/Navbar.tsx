@@ -57,7 +57,7 @@ export function Navbar() {
               </SignInButton>
               <SignUpButton mode="modal">
                 <Button size="sm" className="text-sm font-medium">
-                  Get Started
+                  Sign Up
                 </Button>
               </SignUpButton>
             </div>
@@ -83,8 +83,6 @@ export function Navbar() {
           </SignedIn>
         </div>
       </div>
-
-      {/* Mobile Navigation */}
       <MobileNav />
     </header>
   );
@@ -93,7 +91,6 @@ export function Navbar() {
 function MobileNav() {
   return (
     <nav className="md:hidden border-t border-border/40 bg-background/95 backdrop-blur-xl">
-      <div className="container mx-auto px-4 py-4 space-y-3">
         <SignedOut>
           <div className="pt-3 border-t border-border/40 space-y-2">
             <SignInButton mode="modal">
@@ -103,7 +100,6 @@ function MobileNav() {
             </SignInButton>
           </div>
         </SignedOut>
-      </div>
     </nav>
   );
 }
