@@ -69,7 +69,10 @@ export default defineSchema({
     name: v.string(),
     description: v.optional(v.string()),
     organizationId: v.id("organizations"),
-  }).index("by_organization", ["organizationId"]),
+    sectionId: v.optional(v.id("sections")),
+  })
+    .index("by_organization", ["organizationId"])
+    .index("by_section", ["sectionId"]),
 
   styleRates: defineTable({
     styleId: v.id("styles"),

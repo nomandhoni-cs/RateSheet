@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { LoadingSpinner } from "@/components/ui/loading";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -26,12 +27,15 @@ import {
 } from "@/components/ui/table";
 import StyleCurrentRate from "@/components/StyleCurrentRate";
 import StyleRatesManager from "@/components/StyleRatesManager";
+import type { Id } from "../../../../convex/_generated/dataModel";
+import { toast } from "sonner";
 
 export default function StylesPage() {
   const { user } = useUser();
   const [isAddingStyle, setIsAddingStyle] = useState(false);
   const [newStyleName, setNewStyleName] = useState("");
   const [newStyleDescription, setNewStyleDescription] = useState("");
+  const [newStyleSectionId, setNewStyleSectionId] = useState<string>("");
   const [isAddingRate, setIsAddingRate] = useState<string | null>(null);
   const [newRate, setNewRate] = useState("");
   const [newEffectiveDate, setNewEffectiveDate] = useState("");
@@ -50,6 +54,11 @@ export default function StylesPage() {
       : "skip"
   );
 
+  const sections = useQuery(
+    api.sections.getAllSections,
+    userData?.organizationId ? { organizationId: userData.organizationId } : "skip"
+  );
+
   const createStyle = useMutation(api.styles.createStyle);
   const deleteStyle = useMutation(api.styles.deleteStyle);
   const createStyleRate = useMutation(api.styles.createStyleRate);
@@ -66,12 +75,16 @@ export default function StylesPage() {
         name: newStyleName.trim(),
         description: newStyleDescription.trim() || undefined,
         organizationId: userData.organizationId,
+        sectionId: newStyleSectionId ? (newStyleSectionId as Id<"sections">) : undefined,
       });
+      toast.success("Style created successfully");
       setNewStyleName("");
       setNewStyleDescription("");
+      setNewStyleSectionId("");
       setIsAddingStyle(false);
     } catch (error) {
       console.error("Failed to create style:", error);
+      toast.error("Failed to create style");
     }
   };
 
@@ -93,12 +106,14 @@ export default function StylesPage() {
         effectiveDate: newEffectiveDate,
         endDate: newEndDate || undefined,
       });
+      toast.success("Rate added successfully");
       setNewRate("");
       setNewEffectiveDate("");
       setNewEndDate("");
       setIsAddingRate(null);
     } catch (error) {
       console.error("Failed to create style rate:", error);
+      toast.error("Failed to add rate");
     }
   };
 
@@ -110,8 +125,10 @@ export default function StylesPage() {
     ) {
       try {
         await deleteStyle({ styleId: styleId as any });
+        toast.success("Style deleted");
       } catch (error) {
         console.error("Failed to delete style:", error);
+        toast.error("Failed to delete style");
       }
     }
   };
@@ -171,6 +188,19 @@ export default function StylesPage() {
                   onChange={(e) => setNewStyleDescription(e.target.value)}
                   placeholder="Brief description of the product"
                 />
+              </div>
+              <div>
+                <Label htmlFor="styleSection">Section (Optional)</Label>
+                <Select value={newStyleSectionId} onValueChange={setNewStyleSectionId}>
+                  <SelectTrigger id="styleSection">
+                    <SelectValue placeholder="Select a section (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sections?.map((sec) => (
+                      <SelectItem key={sec._id} value={sec._id}>{sec.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button type="submit" className="w-full sm:w-auto">

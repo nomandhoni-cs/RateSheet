@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
@@ -31,6 +31,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import WorkerSelect from "@/components/WorkerSelect";
+import { toast } from "sonner";
 
 export default function ProductionPage() {
   const { user } = useUser();
@@ -41,6 +42,9 @@ export default function ProductionPage() {
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0]
   );
+  const [focusedStyleId, setFocusedStyleId] = useState<string>("");
+  const [allSectionsChecked, setAllSectionsChecked] = useState(true);
+  const [selectedSectionIds, setSelectedSectionIds] = useState<Record<string, boolean>>({});
 
   const userData = useQuery(
     api.users.getUserByClerkId,
@@ -59,6 +63,11 @@ export default function ProductionPage() {
     userData?.organizationId
       ? { organizationId: userData.organizationId }
       : "skip"
+  );
+
+  const sections = useQuery(
+    api.sections.getAllSections,
+    userData?.organizationId ? { organizationId: userData.organizationId } : "skip"
   );
 
   const productionLogs = useQuery(
@@ -88,10 +97,25 @@ export default function ProductionPage() {
     }));
   };
 
+  const filteredStyles = useMemo(() => {
+    if (!styles) return [] as any[];
+    if (allSectionsChecked) return styles;
+    const ids = Object.keys(selectedSectionIds).filter((id) => selectedSectionIds[id]);
+    if (ids.length === 0) return styles; // fallback to all if none selected
+    return styles.filter((s: any) => (s.sectionId ? ids.includes(s.sectionId) : false));
+  }, [styles, allSectionsChecked, selectedSectionIds]);
+
   const handleAddLog = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedWorkerId || !productionDate || !userData?.organizationId)
+    if (!selectedWorkerId) {
+      toast.error("Please select a worker");
       return;
+    }
+    if (!productionDate) {
+      toast.error("Please choose a production date");
+      return;
+    }
+    if (!userData?.organizationId) return;
 
     const orgId = userData.organizationId as any;
 
@@ -106,18 +130,20 @@ export default function ProductionPage() {
       }));
 
     if (logsToCreate.length === 0) {
-      // TODO: Show a message to the user that they need to enter at least one quantity
+      toast.error("Enter at least one quantity");
       return;
     }
 
     try {
       await Promise.all(logsToCreate.map((args) => createProductionLog(args)));
+      toast.success("Production logs added");
       setSelectedWorkerId("");
       setQuantities({});
       setProductionDate("");
       setIsAddingLog(false);
     } catch (error) {
       console.error("Failed to create production logs:", error);
+      toast.error("Failed to add production logs");
     }
   };
 
@@ -125,8 +151,10 @@ export default function ProductionPage() {
     if (confirm("Are you sure you want to delete this production log?")) {
       try {
         await deleteProductionLog({ logId: logId as any });
+        toast.success("Production log deleted");
       } catch (error) {
         console.error("Failed to delete production log:", error);
+        toast.error("Failed to delete production log");
       }
     }
   };
@@ -179,19 +207,58 @@ export default function ProductionPage() {
                   placeholder="Search worker by name or ID"
                 />
               </div>
+              <div>
+                <Label>Filter Styles by Section</Label>
+                <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                  <label className="flex items-center gap-2 text-sm p-2 rounded border">
+                    <input
+                      type="checkbox"
+                      checked={allSectionsChecked}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setAllSectionsChecked(checked);
+                        if (checked) setSelectedSectionIds({});
+                      }}
+                    />
+                    <span>All</span>
+                  </label>
+                  {sections?.map((sec) => (
+                    <label key={sec._id} className="flex items-center gap-2 text-sm p-2 rounded border">
+                      <input
+                        type="checkbox"
+                        checked={allSectionsChecked ? true : !!selectedSectionIds[sec._id]}
+                        disabled={allSectionsChecked}
+                        onChange={(e) =>
+                          setSelectedSectionIds((prev) => ({ ...prev, [sec._id]: e.target.checked }))
+                        }
+                      />
+                      <span>{sec.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
               <div className="space-y-2">
                 <Label>Styles</Label>
-                {styles?.map((style) => (
+                {filteredStyles?.map((style) => (
                   <div
                     key={style._id}
-                    className="flex items-center justify-between"
+                    className={`flex items-center justify-between rounded px-2 py-1 ${focusedStyleId === style._id ? "bg-muted" : ""}`}
                   >
-                    <Label htmlFor={`style-${style._id}`}>{style.name}</Label>
+                    <Label htmlFor={`style-${style._id}`}>
+                      {style.name}
+                      {style.sectionId && (
+                        <span className="ml-2 text-xs text-muted-foreground">(
+                          {sections?.find((s) => s._id === style.sectionId)?.name}
+                        )</span>
+                      )}
+                    </Label>
                     <Input
                       id={`style-${style._id}`}
                       type="number"
                       min="0"
                       value={quantities[style._id] || ""}
+                      onFocus={() => setFocusedStyleId(style._id)}
+                      onBlur={() => setFocusedStyleId("")}
                       onChange={(e) =>
                         handleQuantityChange(style._id, e.target.value)
                       }

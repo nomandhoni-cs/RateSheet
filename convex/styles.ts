@@ -7,6 +7,7 @@ export const createStyle = mutation({
     name: v.string(),
     description: v.optional(v.string()),
     organizationId: v.id("organizations"),
+    sectionId: v.optional(v.id("sections")),
   },
   handler: async (ctx, args) => {
     return await ctx.db.insert("styles", args);
