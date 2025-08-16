@@ -1,103 +1,99 @@
-import Image from "next/image";
+"use client";
+
+import { SignedIn, SignedOut } from "@clerk/nextjs";
+import { Button } from "@/components/ui/button";
+import { UserSync } from "@/components/UserSync";
+import { useUser } from "@clerk/nextjs";
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { Background } from "@/components/Background";
+import { Footer } from "@/components/Footer";
+import { LoadingSpinner } from "@/components/ui/loading";
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const { user, isLoaded } = useUser();
+  const router = useRouter();
+  const userData = useQuery(
+    api.users.getUserByClerkId,
+    user ? { clerkId: user.id } : "skip"
+  );
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+  // Redirect to dashboard if user is signed in and has completed onboarding
+  useEffect(() => {
+    if (isLoaded && user && userData && userData.hasCompletedOnboarding) {
+      router.push("/dashboard");
+    }
+  }, [isLoaded, user, userData, router]);
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      <UserSync />
+
+      <SignedOut>
+        <Background />
+        <main className="flex-1 w-full pt-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="flex flex-col items-center justify-center min-h-[70vh] text-center">
+              <div className="max-w-4xl mx-auto">
+                <h1 className="text-4xl font-sans md:text-6xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                  Welcome to RateSheet
+                </h1>
+                <p className="text-xl md:text-2xl lg:text-3xl text-muted-foreground mb-12 max-w-4xl mx-auto leading-relaxed">
+                  A comprehensive production tracking and payroll management system
+                  for garment manufacturing facilities.
+                </p>
+
+                <div className="grid md:grid-cols-3 gap-6 lg:gap-8 mb-12 text-left">
+                  <div className="p-6 bg-card rounded-lg shadow-sm border border-border">
+                    <h3 className="text-lg font-sans font-semibold mb-2">Track Production</h3>
+                    <p className="text-muted-foreground">
+                      Monitor daily worker output with real-time logging and
+                      comprehensive reporting.
+                    </p>
+                  </div>
+                  <div className="p-6 bg-card rounded-lg shadow-sm border border-border">
+                    <h3 className="text-lg font-sans font-semibold mb-2">Dynamic Pricing</h3>
+                    <p className="text-muted-foreground">
+                      Set time-sensitive rates for each product style with automatic
+                      payroll calculations.
+                    </p>
+                  </div>
+                  <div className="p-6 bg-card rounded-lg shadow-sm border border-border">
+                    <h3 className="text-lg font-sans font-semibold mb-2">Team Management</h3>
+                    <p className="text-muted-foreground">
+                      Organize workers into sections with role-based access control
+                      for managers and admins.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Button size="lg" className="text-lg px-8 py-3">
+                    Get Started Free
+                  </Button>
+                  <Button variant="outline" size="lg" className="text-lg px-8 py-3">
+                    Learn More
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </SignedOut>
+
+      <SignedIn>
+        {/* This will be handled by UserSync and redirect */}
+        <main className="flex-1 flex items-center justify-center pt-16">
+          <div className="text-center animate-fadeInUp">
+            <LoadingSpinner size="lg" className="mb-4 mx-auto" />
+            <h2 className="text-lg font-sans font-medium text-foreground mb-2">Loading Dashboard</h2>
+            <p className="text-sm text-muted-foreground">Redirecting you to your workspace...</p>
+          </div>
+        </main>
+      </SignedIn>
     </div>
   );
 }
