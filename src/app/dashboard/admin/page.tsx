@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useUser } from "@clerk/nextjs";
-import { useMutation, useQuery } from "convex/react";
+import { useUser, useAuth } from "@clerk/nextjs";
+import { useMutation, useQuery, useConvex } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,13 +19,33 @@ export default function AdminSettingsPage() {
     user ? { clerkId: user.id } : "skip"
   );
 
+  const convex = useConvex();
+  const { getToken } = useAuth();
+  const demoteUser = useMutation(api.users.demoteUserToPending);
+  const updateOrganization = useMutation(api.organizations.updateOrganization);
+
+  // Forward Clerk token to Convex from this page (without changing the provider)
+  useEffect(() => {
+    convex.setAuth(async () => {
+      try {
+        // Prefer the 'convex' JWT template if present; fallback to default
+        const templated = await getToken({ template: "convex" } as any).catch(() => null);
+        if (templated) return templated;
+        const fallback = await getToken().catch(() => null);
+        return fallback ?? null;
+      } catch {
+        return null;
+      }
+    });
+    return () => {
+      convex.setAuth(() => Promise.resolve(null));
+    };
+  }, [convex, getToken]);
+
   const usersInOrg = useQuery(
     api.users.getUsersInOrganization,
     userData?.organizationId ? { organizationId: userData.organizationId } : "skip"
   );
-
-  const demoteUser = useMutation(api.users.demoteUserToPending);
-  const updateOrganization = useMutation(api.organizations.updateOrganization);
 
   const organization = useQuery(
     api.organizations.getOrganization,

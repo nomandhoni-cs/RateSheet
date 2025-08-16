@@ -73,9 +73,33 @@ export const updateWorker = mutation({
     workerId: v.id("workers"),
     name: v.string(),
     sectionId: v.id("sections"),
+    manualId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const { workerId, ...updates } = args;
+    const { workerId, manualId, ...updates } = args;
+
+    // If manualId provided, ensure uniqueness within the organization
+    if (typeof manualId !== 'undefined') {
+      const existing = await ctx.db.get(workerId);
+      if (!existing) throw new Error("Worker not found");
+
+      if (manualId) {
+        const dup = await ctx.db
+          .query("workers")
+          .withIndex("by_org_manualId", (q) =>
+            q.eq("organizationId", existing.organizationId).eq("manualId", manualId)
+          )
+          .unique();
+
+        if (dup && dup._id !== workerId) {
+          throw new Error("A worker with this manual ID already exists in the organization.");
+        }
+      }
+
+      await ctx.db.patch(workerId, { ...updates, manualId: manualId || undefined });
+      return;
+    }
+
     await ctx.db.patch(workerId, updates);
   },
 });

@@ -37,6 +37,10 @@ export default function WorkersPage() {
   const [newWorkerName, setNewWorkerName] = useState("");
   const [selectedSectionId, setSelectedSectionId] = useState<string>("");
   const [manualId, setManualId] = useState("");
+  const [editingId, setEditingId] = useState<string>("");
+  const [editName, setEditName] = useState("");
+  const [editSectionId, setEditSectionId] = useState<string>("");
+  const [editManualId, setEditManualId] = useState("");
 
   const userData = useQuery(
     api.users.getUserByClerkId,
@@ -59,6 +63,7 @@ export default function WorkersPage() {
 
   const createWorker = useMutation(api.workers.createWorker);
   const deleteWorker = useMutation(api.workers.deleteWorker);
+  const updateWorker = useMutation(api.workers.updateWorker);
 
   const handleAddWorker = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,6 +97,35 @@ export default function WorkersPage() {
       } catch (error) {
         console.error("Failed to delete worker:", error);
       }
+    }
+  };
+
+  const startEdit = (w: any) => {
+    setEditingId(w._id);
+    setEditName(w.name || "");
+    setEditSectionId(w.sectionId);
+    setEditManualId(w.manualId || "");
+  };
+
+  const cancelEdit = () => {
+    setEditingId("");
+    setEditName("");
+    setEditSectionId("");
+    setEditManualId("");
+  };
+
+  const saveEdit = async () => {
+    if (!editingId || !editName.trim() || !editSectionId) return;
+    try {
+      await updateWorker({
+        workerId: editingId as any,
+        name: editName.trim(),
+        sectionId: editSectionId as any,
+        manualId: editManualId.trim() || undefined,
+      });
+      cancelEdit();
+    } catch (error) {
+      console.error("Failed to update worker:", error);
     }
   };
 
@@ -226,30 +260,67 @@ export default function WorkersPage() {
                 <TableBody>
                   {workers.map((worker) => (
                     <TableRow key={worker._id}>
-                      <TableCell className="font-medium">
-                        <div>
-                          <div>{worker.name}</div>
-                          <div className="text-sm text-muted-foreground sm:hidden">
-                            {worker.section?.name}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        {worker.section?.name || "Unknown"}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {sections?.find((s) => s._id === worker.sectionId)
-                          ?.manager?.name || "Unknown"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDeleteWorker(worker._id)}
-                        >
-                          Delete
-                        </Button>
-                      </TableCell>
+                      {editingId === worker._id ? (
+                        <>
+                          <TableCell className="font-medium">
+                            <div className="space-y-1">
+                              <Input value={editName} onChange={(e)=>setEditName(e.target.value)} placeholder="Worker name" />
+                              <div className="text-xs text-muted-foreground">ID (Manual):</div>
+                              <Input value={editManualId} onChange={(e)=>setEditManualId(e.target.value)} placeholder="e.g., W-1024" />
+                            </div>
+                          </TableCell>
+                          <TableCell className="hidden sm:table-cell">
+                            <Select value={editSectionId} onValueChange={setEditSectionId}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a section" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {sections?.map((section) => (
+                                  <SelectItem key={section._id} value={section._id}>
+                                    {section.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            {sections?.find((s) => s._id === editSectionId)?.manager?.name || "Unknown"}
+                          </TableCell>
+                          <TableCell className="text-right space-x-2">
+                            <Button size="sm" onClick={saveEdit}>Save</Button>
+                            <Button variant="outline" size="sm" onClick={cancelEdit}>Cancel</Button>
+                          </TableCell>
+                        </>
+                      ) : (
+                        <>
+                          <TableCell className="font-medium">
+                            <div>
+                              <div>{worker.name}</div>
+                              <div className="text-xs text-muted-foreground">ID: {worker.manualId || '-'}</div>
+                              <div className="text-sm text-muted-foreground sm:hidden">
+                                {worker.section?.name}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="hidden sm:table-cell">
+                            {worker.section?.name || "Unknown"}
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            {sections?.find((s) => s._id === worker.sectionId)
+                              ?.manager?.name || "Unknown"}
+                          </TableCell>
+                          <TableCell className="text-right space-x-2">
+                            <Button variant="outline" size="sm" onClick={() => startEdit(worker)}>Edit</Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteWorker(worker._id)}
+                            >
+                              Delete
+                            </Button>
+                          </TableCell>
+                        </>
+                      )}
                     </TableRow>
                   ))}
                 </TableBody>
