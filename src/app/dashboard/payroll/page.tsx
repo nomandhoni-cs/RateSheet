@@ -36,6 +36,7 @@ export default function PayrollPage() {
   const [selectedWorkerId, setSelectedWorkerId] = useState<string>("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [selectedBonusRuleId, setSelectedBonusRuleId] = useState<string>("none");
   const [showPayroll, setShowPayroll] = useState(false);
 
   const userData = useQuery(
@@ -55,6 +56,12 @@ export default function PayrollPage() {
     userData?.organizationId ? { organizationId: userData.organizationId as any } : "skip"
   );
 
+  // Cast to any to avoid TS error until Convex codegen includes bonuses module
+  const bonusRules = useQuery(
+    (api as any).bonuses.listActiveBonusRules,
+    userData?.organizationId ? { organizationId: userData.organizationId as any, onDate: endDate || undefined } : "skip"
+  );
+
   const payrollData = useQuery(
     api.productionLogs.calculateWorkerPayroll,
     selectedWorkerId && startDate && endDate && showPayroll
@@ -62,6 +69,7 @@ export default function PayrollPage() {
         workerId: selectedWorkerId as any,
         startDate,
         endDate,
+        bonusRuleId: selectedBonusRuleId !== "none" ? (selectedBonusRuleId as any) : undefined,
       }
       : "skip"
   );
@@ -79,6 +87,7 @@ export default function PayrollPage() {
     setSelectedWorkerId("");
     setStartDate("");
     setEndDate("");
+    setSelectedBonusRuleId("none");
     setShowPayroll(false);
   };
 
@@ -121,6 +130,7 @@ export default function PayrollPage() {
       ["Organization", orgName],
       ["Worker", workerName],
       ["Period", `${startDate} to ${endDate}`],
+      ...(payrollData.bonus && payrollData.bonus.applied ? [["Bonus Rule", payrollData.bonus.name]] : []),
       [],
       ["Date", "Style", "Quantity", "Rate", "Pay"],
       ...payrollData.details.map((d: any) => [
@@ -131,7 +141,9 @@ export default function PayrollPage() {
         String(d.pay),
       ]),
       [],
-      ["Total Pay", String(payrollData.totalPay)],
+      ["Base Total Pay", String(payrollData.totalPay)],
+      ...(payrollData.bonus ? [["Bonus Amount", String(payrollData.bonus.bonusAmount)]] : []),
+      ["Total With Bonus", String(payrollData.totalWithBonus)],
     ];
     const csv = rows.map(r => r.map(v => `"${String(v).replaceAll('"','""')}"`).join(",")).join("\n");
     download(`payroll-${workerName}-${startDate}-${endDate}.csv`, csv, "text/csv;charset=utf-8");
@@ -150,6 +162,13 @@ export default function PayrollPage() {
         <td>৳${d.pay.toFixed(2)}</td>
       </tr>
     `).join("");
+    const bonusHtml = payrollData.bonus ? `
+      <h2>Bonus</h2>
+      <div><strong>Rule:</strong> ${payrollData.bonus.name}</div>
+      <div><strong>Criteria:</strong> ${payrollData.bonus.criteriaType} > ${payrollData.bonus.threshold} (value: ${payrollData.bonus.criteriaValue})</div>
+      <div><strong>Bonus:</strong> ${payrollData.bonus.bonusType === 'percent' ? payrollData.bonus.bonusValue + '%' : '৳' + payrollData.bonus.bonusValue.toFixed(2)} ${payrollData.bonus.applied ? '(Applied)' : '(Not Applied)'} </div>
+      <div><strong>Bonus Amount:</strong> ৳${payrollData.bonus.bonusAmount.toFixed(2)}</div>
+    ` : '';
     const html = `
       <h1>${orgName}</h1>
       <div class="muted">Generated: ${new Date().toLocaleString()}</div>
@@ -157,8 +176,10 @@ export default function PayrollPage() {
       <div><strong>Worker:</strong> ${workerName}</div>
       <div><strong>Period:</strong> ${startDate} to ${endDate}</div>
       <table><thead><tr><th>Date</th><th>Style</th><th>Quantity</th><th>Rate</th><th>Pay</th></tr></thead><tbody>${tableRows || '<tr><td colspan="5">No data</td></tr>'}</tbody></table>
+      ${bonusHtml}
       <h2>Total</h2>
-      <div><strong>Total Pay:</strong> ৳${payrollData.totalPay.toFixed(2)}</div>
+      <div><strong>Base Total Pay:</strong> ৳${payrollData.totalPay.toFixed(2)}</div>
+      <div><strong>Total With Bonus:</strong> ৳${payrollData.totalWithBonus.toFixed(2)}</div>
     `;
     printHtml(`Payroll - ${workerName}`, html);
   }
@@ -218,6 +239,21 @@ export default function PayrollPage() {
             </div>
           </div>
 
+          <div>
+            <Label htmlFor="bonusRule">Bonus Rule (optional)</Label>
+            <Select value={selectedBonusRuleId} onValueChange={setSelectedBonusRuleId}>
+              <SelectTrigger id="bonusRule">
+                <SelectValue placeholder={bonusRules ? (bonusRules.length ? "Select a bonus rule" : "No active bonus rules") : "Loading..."} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {(bonusRules || []).map((r: any) => (
+                  <SelectItem key={r._id} value={r._id}>{r.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="flex flex-col sm:flex-row gap-2">
             <Button
               onClick={handleCalculatePayroll}
@@ -246,10 +282,18 @@ export default function PayrollPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="mb-6">
-              <div className="text-3xl font-bold text-green-600">
-                Total Pay: ৳{payrollData.totalPay.toFixed(2)}
-              </div>
+            <div className="mb-6 space-y-1">
+              <div className="text-2xl font-semibold">Base Total: ৳{payrollData.totalPay.toFixed(2)}</div>
+              {payrollData.bonus && (
+                <div className="text-sm text-muted-foreground">
+                  Bonus Rule: <span className="font-medium">{payrollData.bonus.name}</span> — {payrollData.bonus.applied ? (
+                    <span className="text-green-600">Applied (+৳{payrollData.bonus.bonusAmount.toFixed(2)})</span>
+                  ) : (
+                    <span className="text-amber-600">Not applied</span>
+                  )}
+                </div>
+              )}
+              <div className="text-3xl font-bold text-green-600">Total With Bonus: ৳{payrollData.totalWithBonus.toFixed(2)}</div>
             </div>
 
             {payrollData.details.length === 0 ? (

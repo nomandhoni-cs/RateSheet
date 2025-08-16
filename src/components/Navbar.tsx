@@ -31,15 +31,19 @@ export function Navbar() {
   const isDashboard = pathname?.startsWith('/dashboard');
   const isOnboarded = userData?.hasCompletedOnboarding;
 
-  const navigation = [
+  const baseNavigation = [
     { name: "Dashboard", href: "/dashboard", icon: BarChart3 },
     { name: "Workers", href: "/dashboard/workers", icon: Users },
     { name: "Sections", href: "/dashboard/sections", icon: Building2 },
     { name: "Styles", href: "/dashboard/styles", icon: Palette },
     { name: "Production", href: "/dashboard/production", icon: ClipboardList },
     { name: "Payroll", href: "/dashboard/payroll", icon: DollarSign },
+    { name: "Bonuses", href: "/dashboard/bonuses", icon: FileText },
     { name: "Reports", href: "/dashboard/reports", icon: FileText },
   ];
+  const navigation = userData?.role === 'admin'
+    ? [...baseNavigation, { name: "Settings", href: "/dashboard/admin", icon: Building2 }]
+    : baseNavigation;
 
   return (
     <>
@@ -144,6 +148,14 @@ export function Navbar() {
             </SignedOut>
 
             <SignedIn>
+              {/* Show current user and role */}
+              {userData && (
+                <div className="hidden md:flex items-center gap-2 pr-1 text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">{userData.name}</span>
+                  <span>·</span>
+                  <span className="capitalize px-2 py-0.5 rounded bg-accent/60 text-foreground">{userData.role}</span>
+                </div>
+              )}
               <UserButton
                 appearance={{
                   elements: {

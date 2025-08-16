@@ -34,6 +34,56 @@ export const createUser = mutation({
   },
 });
 
+// Demote user to pending (admin only) without removing from organization
+export const demoteUserToPending = mutation({
+  args: {
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      throw new Error("You must be logged in to change a user's role.");
+    }
+
+    const callingUser = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!callingUser || callingUser.role !== "admin") {
+      throw new Error("You must be an admin to change a user's role.");
+    }
+
+    const userToDemote = await ctx.db.get(args.userId);
+
+    if (!userToDemote) {
+      throw new Error("User not found.");
+    }
+
+    // Same organization enforcement
+    if (userToDemote.organizationId !== callingUser.organizationId) {
+      throw new Error("User is not in your organization.");
+    }
+
+    // If the user is a manager assigned to sections, prevent demotion until reassigned
+    const assignedSections = await ctx.db
+      .query("sections")
+      .withIndex("by_manager", (q) => q.eq("managerId", args.userId))
+      .collect();
+
+    if (assignedSections.length > 0) {
+      throw new Error(
+        "This manager is assigned to one or more sections. Please re-assign them before changing the role to pending."
+      );
+    }
+
+    await ctx.db.patch(args.userId, {
+      role: "pending",
+    });
+  },
+});
+
 // Join organization with invite code
 export const joinOrganization = mutation({
   args: {
