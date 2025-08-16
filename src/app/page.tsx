@@ -31,10 +31,10 @@ export default function Home() {
       <SignedOut>
         <div className="flex flex-col items-center justify-center min-h-[70vh] text-center">
           <div className="max-w-4xl mx-auto">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-sans md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               Welcome to RateSheet
             </h1>
-            <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto">
+            <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto font-mono">
               A comprehensive production tracking and payroll management system
               for garment manufacturing facilities.
             </p>

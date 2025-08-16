@@ -66,7 +66,6 @@ export default function DashboardLayout({
       `}
       >
         <div className="flex items-center justify-between p-6 border-b lg:justify-center">
-          <h2 className="text-xl font-semibold">RateSheet</h2>
           <button className="lg:hidden" onClick={() => setSidebarOpen(false)}>
             <X className="h-6 w-6" />
           </button>
@@ -104,7 +103,7 @@ export default function DashboardLayout({
           >
             <Menu className="h-6 w-6" />
           </button>
-          <h1 className="text-lg font-semibold">RateSheet</h1>
+          <h1 className="text-lg font-semibold"></h1>
           <div className="w-6" /> {/* Spacer for centering */}
         </div>
 
