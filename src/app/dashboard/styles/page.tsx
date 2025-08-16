@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, Fragment } from "react";
+
 import { useUser } from "@clerk/nextjs";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
@@ -24,6 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import StyleCurrentRate from "@/components/StyleCurrentRate";
+import StyleRatesManager from "@/components/StyleRatesManager";
 
 export default function StylesPage() {
   const { user } = useUser();
@@ -34,6 +36,7 @@ export default function StylesPage() {
   const [newRate, setNewRate] = useState("");
   const [newEffectiveDate, setNewEffectiveDate] = useState("");
   const [newEndDate, setNewEndDate] = useState("");
+  const [openRates, setOpenRates] = useState<Record<string, boolean>>({});
 
   const userData = useQuery(
     api.users.getUserByClerkId,
@@ -276,50 +279,63 @@ export default function StylesPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Style Name</TableHead>
-                    <TableHead className="hidden md:table-cell">
-                      Description
-                    </TableHead>
+                    <TableHead className="hidden md:table-cell">Description</TableHead>
                     <TableHead className="hidden md:table-cell">Current Rate</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {styles.map((style) => (
-                    <TableRow key={style._id}>
-                      <TableCell className="font-medium">
-                        <div>
-                          <div>{style.name}</div>
-                          <div className="text-sm text-muted-foreground md:hidden">
-                            {style.description || "No description"}
-                            <span className="ml-2">• Rate: <StyleCurrentRate styleId={style._id as any} date={today} /></span>
+                    <React.Fragment key={style._id}>
+                      <TableRow>
+                        <TableCell className="font-medium">
+                          <div>
+                            <div>{style.name}</div>
+                            <div className="text-sm text-muted-foreground md:hidden">
+                              <span className="ml-2">• Rate: <StyleCurrentRate styleId={style._id as any} date={today} /></span>
+                            </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {style.description || "No description"}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <StyleCurrentRate styleId={style._id as any} date={today} />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex flex-col sm:flex-row gap-2 justify-end">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setIsAddingRate(style._id)}
-                          >
-                            Add Rate
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteStyle(style._id)}
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {style.description || "No description"}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <StyleCurrentRate styleId={style._id as any} date={today} />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex flex-col sm:flex-row gap-2 justify-end">
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => setOpenRates((prev) => ({ ...prev, [style._id]: !prev[style._id] }))}
+                            >
+                              {openRates[style._id] ? "Hide Rates" : "Manage Rates"}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setIsAddingRate(style._id)}
+                            >
+                              Add Rate
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteStyle(style._id)}
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                      {openRates[style._id] && (
+                        <TableRow>
+                          <TableCell colSpan={4}>
+                            <StyleRatesManager styleId={style._id as any} today={today} />
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </React.Fragment>
                   ))}
                 </TableBody>
               </Table>
