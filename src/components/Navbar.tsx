@@ -68,7 +68,7 @@ export function Navbar() {
             >
               {/* Light mode logo */}
               <Image
-                src="/dark-logo.svg"
+                src="/white-logo.svg"
                 width={180}
                 height={45}
                 alt="RateSheet Logo"
@@ -77,11 +77,11 @@ export function Navbar() {
               />
               {/* Dark mode logo */}
               <Image
-                src="/white-logo.svg"
+                src="/dark-logo.svg"
                 width={180}
                 height={45}
-                alt="RateSheet Logo"
                 className="hidden dark:block"
+                alt="RateSheet Logo"
                 priority
               />
             </Link>
