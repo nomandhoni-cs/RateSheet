@@ -49,13 +49,13 @@ export function Navbar() {
     <>
       <header className="fixed top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 shadow-sm">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
-          {/* Left side - Logo and Dashboard Menu */}
+          {/* Left side - Logo and Menu */}
           <div className="flex items-center space-x-4">
-            {/* Dashboard Menu Button */}
-            {isDashboard && isOnboarded && (
+            {/* Menu Button - Dashboard or Landing */}
+            {((isDashboard && isOnboarded) || !isDashboard) && (
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="lg:hidden p-1 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
+                className="md:hidden p-1 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
               >
                 <Menu className="h-5 w-5" />
               </button>
@@ -66,18 +66,18 @@ export function Navbar() {
               href={isDashboard && isOnboarded ? "/dashboard" : "/"}
               className="flex items-center transition-opacity hover:opacity-80"
             >
-              {/* Light mode logo */}
+              {/* Light mode logo (dark logo for light background) */}
               <Image
-                src="/white-logo.svg"
+                src="/dark-logo.svg"
                 width={180}
                 height={45}
                 alt="RateSheet Logo"
                 className="block dark:hidden"
                 priority
               />
-              {/* Dark mode logo */}
+              {/* Dark mode logo (white logo for dark background) */}
               <Image
-                src="/dark-logo.svg"
+                src="/white-logo.svg"
                 width={180}
                 height={45}
                 className="hidden dark:block"
@@ -106,6 +106,21 @@ export function Navbar() {
                     </Link>
                   );
                 })}
+              </nav>
+            )}
+
+            {/* Landing Page Navigation */}
+            {!isDashboard && (
+              <nav className="hidden md:flex items-center space-x-8 ml-8">
+                <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                  Features
+                </a>
+                <a href="#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                  How it Works
+                </a>
+                <a href="https://github.com/nomandhoni-cs/RateSheet" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                  GitHub
+                </a>
               </nav>
             )}
           </div>
@@ -168,20 +183,20 @@ export function Navbar() {
         </div>
       </header>
 
-      {/* Mobile Dashboard Sidebar */}
-      {isDashboard && isOnboarded && (
+      {/* Mobile Sidebar */}
+      {((isDashboard && isOnboarded) || !isDashboard) && (
         <>
           {/* Mobile sidebar overlay */}
           {sidebarOpen && (
             <div
-              className="fixed top-16 inset-x-0 bottom-0 z-30 bg-black/50 lg:hidden"
+              className="fixed top-16 inset-x-0 bottom-0 z-30 bg-black/50 md:hidden"
               onClick={() => setSidebarOpen(false)}
             />
           )}
 
           {/* Mobile Sidebar */}
           <div className={`
-            fixed top-16 bottom-0 left-0 z-40 w-64 bg-card border-r border-border shadow-xl transform transition-transform duration-300 ease-in-out lg:hidden
+            fixed top-16 bottom-0 left-0 z-40 w-64 bg-card border-r border-border shadow-xl transform transition-transform duration-300 ease-in-out md:hidden
             ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
           `}>
             <div className="flex items-center justify-between p-6 border-b border-border">
@@ -194,29 +209,77 @@ export function Navbar() {
               </button>
             </div>
 
-            <nav className="mt-6 px-3 space-y-1">
-              {navigation.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.href;
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${isActive
-                      ? 'bg-accent text-foreground'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-                      }`}
-                    onClick={() => setSidebarOpen(false)}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {item.name}
-                  </Link>
-                );
-              })}
-            </nav>
+            {/* Dashboard Navigation */}
+            {isDashboard && isOnboarded && (
+              <nav className="mt-6 px-3 space-y-1">
+                {navigation.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = pathname === item.href;
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${isActive
+                        ? 'bg-accent text-foreground'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                        }`}
+                      onClick={() => setSidebarOpen(false)}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {item.name}
+                    </Link>
+                  );
+                })}
+              </nav>
+            )}
 
-            {/* User info at bottom */}
-            {userData && (
+            {/* Landing Page Navigation */}
+            {!isDashboard && (
+              <nav className="mt-6 px-3 space-y-1">
+                <a
+                  href="#features"
+                  className="block px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  Features
+                </a>
+                <a
+                  href="#how-it-works"
+                  className="block px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  How it Works
+                </a>
+                <a
+                  href="https://github.com/nomandhoni-cs/RateSheet"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  GitHub
+                </a>
+
+                {/* Mobile Auth Buttons for Landing Page */}
+                <div className="pt-4 border-t border-border mt-4 space-y-2">
+                  <SignedOut>
+                    <SignInButton mode="modal">
+                      <Button variant="ghost" className="w-full justify-start" onClick={() => setSidebarOpen(false)}>
+                        Sign In
+                      </Button>
+                    </SignInButton>
+                    <SignUpButton mode="modal">
+                      <Button className="w-full justify-start" onClick={() => setSidebarOpen(false)}>
+                        Get Started
+                      </Button>
+                    </SignUpButton>
+                  </SignedOut>
+                </div>
+              </nav>
+            )}
+
+            {/* User info at bottom for Dashboard */}
+            {isDashboard && userData && (
               <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border bg-muted/50">
                 <div className="text-sm">
                   <p className="font-medium font-sans">{userData.name}</p>

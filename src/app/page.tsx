@@ -2,7 +2,7 @@
 
 import { SignedIn, SignedOut } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { UserSync } from "@/components/UserSync";
 import { useUser } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Background } from "@/components/Background";
 import { Footer } from "@/components/Footer";
-import { Navigation } from "@/components/Navigation";
+
 import { LoadingSpinner } from "@/components/ui/loading";
 import {
   BarChart3,
@@ -22,7 +22,6 @@ import {
   Zap,
   CheckCircle,
   ArrowRight,
-  Github,
   Star,
   TrendingUp,
   Factory,
@@ -48,7 +47,6 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       <UserSync />
-      <Navigation />
 
       <SignedOut>
         <Background />
@@ -78,9 +76,10 @@ export default function Home() {
                     Get Started Free
                     <ArrowRight className="ml-2 w-5 h-5" />
                   </Button>
-                  <Button variant="outline" size="lg" className="text-lg px-8 py-4 h-auto">
-                    <Github className="mr-2 w-5 h-5" />
-                    View on GitHub
+                  <Button variant="outline" size="lg" className="text-lg px-8 py-4 h-auto" asChild>
+                    <a href="https://github.com/nomandhoni-cs/RateSheet" target="_blank" rel="noopener noreferrer">
+                      View on GitHub
+                    </a>
                   </Button>
                 </div>
 
@@ -345,7 +344,6 @@ export default function Home() {
                 </Button>
                 <Button variant="outline" size="lg" className="text-lg px-8 py-4 h-auto" asChild>
                   <a href="https://github.com/nomandhoni-cs/RateSheet" target="_blank" rel="noopener noreferrer">
-                    <Github className="mr-2 w-5 h-5" />
                     Star on GitHub
                   </a>
                 </Button>
